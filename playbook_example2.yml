@@ -1,28 +1,44 @@
 ---
-- hosts: web-server1
-  become: yes
+- name: Example2
+  hosts: all
+  become: true
   tasks:
-    - name: Install Apache
+
+    - name: Update Debian
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Update RedHat
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_os_family == 'RedHat'
+
+
+- name: Example2-1
+  hosts: web-server1
+  become: true
+  tasks:
+    - name: Install apache2
       ansible.builtin.package:
         name: apache2
         state: present
 
-    - name: Start Apache
+    - name: Start apache2
       ansible.builtin.service:
         name: apache2
         state: started
-        enabled: yes
 
-- hosts: web-server2
-  become: yes
+- name: Example2-2
+  hosts: web-server2
+  become: true
   tasks:
-    - name: Install Nginx
+    - name: Install nginx
       ansible.builtin.package:
         name: nginx
         state: present
 
-    - name: Start Nginx
+    - name: Start nginx
       ansible.builtin.service:
         name: nginx
         state: started
-        enabled: yes

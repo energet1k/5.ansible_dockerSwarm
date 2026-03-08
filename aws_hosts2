@@ -4,12 +4,11 @@ ec2-3-70-46-18.eu-central-1.compute.amazonaws.com
 [web-server2]
 ec2-18-199-167-8.eu-central-1.compute.amazonaws.com
 
-[web-server1:vars]
-ansible_user=ubuntu
-ansible_ssh_private_key_file=~/.ssh/gh-ci-repair-key.pem
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+[cluster:children]
+web-server1
+web-server2
 
-[web-server2:vars]
+[cluster:vars]
 ansible_user=ubuntu
 ansible_ssh_private_key_file=~/.ssh/gh-ci-repair-key.pem
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'

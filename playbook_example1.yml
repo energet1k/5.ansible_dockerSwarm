@@ -1,8 +1,18 @@
----
-- hosts: all
-  become: yes
+- name: Example1
+  hosts: all
+  become: true
   tasks:
-    - name: Install Python
+    - name: Update Debian
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Update RedHat
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Install python
       ansible.builtin.package:
         name: python3
         state: present

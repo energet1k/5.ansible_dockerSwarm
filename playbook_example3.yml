@@ -1,16 +1,20 @@
 ---
-- hosts: web-server1
+- name: Example3
+  hosts: web-server1
   tasks:
-    - name: generate secret
-      ansible.builtin.shell: openssl rand -hex 16 | base64
+    - name: Generate secret password
+      ansible.builtin.command: "openssl rand -base64 12"
       register: command_output
+      changed_when: command_output.rc == 0
 
-    - name: debug
+
+    - name: Print command output
       ansible.builtin.debug:
         msg: "Secret password is {{ command_output.stdout }}"
 
-- hosts: web-server2
+- name: Example3-2
+  hosts: web-server2
   tasks:
-    - name: print paswd
+    - name: Print password
       ansible.builtin.debug:
-        msg: "paswd is {{ command_output.stdout }}"
+        msg: "Secret password is {{ command_output.stdout }}"

@@ -1,95 +1,53 @@
 ---
-- hosts: swarm-manager
-  become: yes
-  vars:
-    benchmark_url: "http://localhost:80/"
-    benchmark_requests: 10000
-    benchmark_concurrency: 100
-
+- name: Benchmark Docker Swarm whoami service
+  hosts: localhost
+  gather_facts: true
   tasks:
-    - name: Install apache2-utils (for ab benchmark tool)
+    - name: Update Debian
       ansible.builtin.apt:
-        name: apache2-utils
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Update RedHat
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Install wrk benchmarking tool
+      ansible.builtin.package:
+        name:
+          - wrk
         state: present
-        update_cache: yes
 
-    - name: Deploy Nginx service with 1 replica
-      ansible.builtin.shell: >
-        docker service create
-        --name nginx-benchmark
-        --replicas 1
-        --publish 80:80
-        nginx
-      ignore_errors: yes
+- name: Deploy whoami service on Docker Swarm
+  hosts: swarm-manager
+  tasks:
 
-    - name: Wait for service to be ready
-      ansible.builtin.pause:
-        seconds: 15
+    - name: Remove whoami service
+      ansible.legacy.command:
+        cmd: "docker service rm whoami"
+      become: true
+      register: rm_output
+      failed_when: false
+      changed_when: rm_output.rc == 0
 
-    - name: Benchmark with 1 instance
-      ansible.builtin.shell: >
-        ab -n {{ benchmark_requests }} -c {{ benchmark_concurrency }} {{ benchmark_url }}
-      register: benchmark_1
-      ignore_errors: yes
+    - name: Create whoami service
+      ansible.legacy.command:
+        cmd: "docker service create --name whoami --publish published=8080,target=80 --replicas 1 containous/whoami"
+      become: true
+      register: create_output
+      changed_when: create_output.rc == 0
 
-    - name: Show results for 1 instance
+- name: Benchmark whoami service
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Run wrk benchmark against whoami service
+      ansible.legacy.command:
+        cmd: "wrk -t4 -c5 -d30s http://{{ hostvars | first }}:8080"
+      register: wrk_output
+      changed_when: wrk_output.rc == 0
+
+    - name: Display wrk benchmark results
       ansible.builtin.debug:
-        msg: "{{ benchmark_1.stdout_lines }}"
-
-    # --- 2 instances ---
-    - name: Scale to 2 instances
-      ansible.builtin.shell: docker service scale nginx-benchmark=2
-
-    - name: Wait for scaling
-      ansible.builtin.pause:
-        seconds: 15
-
-    - name: Benchmark with 2 instances
-      ansible.builtin.shell: >
-        ab -n {{ benchmark_requests }} -c {{ benchmark_concurrency }} {{ benchmark_url }}
-      register: benchmark_2
-      ignore_errors: yes
-
-    - name: Show results for 2 instances
-      ansible.builtin.debug:
-        msg: "{{ benchmark_2.stdout_lines }}"
-
-    # --- 4 instances ---
-    - name: Scale to 4 instances
-      ansible.builtin.shell: docker service scale nginx-benchmark=4
-
-    - name: Wait for scaling
-      ansible.builtin.pause:
-        seconds: 15
-
-    - name: Benchmark with 4 instances
-      ansible.builtin.shell: >
-        ab -n {{ benchmark_requests }} -c {{ benchmark_concurrency }} {{ benchmark_url }}
-      register: benchmark_4
-      ignore_errors: yes
-
-    - name: Show results for 4 instances
-      ansible.builtin.debug:
-        msg: "{{ benchmark_4.stdout_lines }}"
-
-    # --- 8 instances ---
-    - name: Scale to 8 instances
-      ansible.builtin.shell: docker service scale nginx-benchmark=8
-
-    - name: Wait for scaling
-      ansible.builtin.pause:
-        seconds: 15
-
-    - name: Benchmark with 8 instances
-      ansible.builtin.shell: >
-        ab -n {{ benchmark_requests }} -c {{ benchmark_concurrency }} {{ benchmark_url }}
-      register: benchmark_8
-      ignore_errors: yes
-
-    - name: Show results for 8 instances
-      ansible.builtin.debug:
-        msg: "{{ benchmark_8.stdout_lines }}"
-
-    - name: Cleanup - remove nginx benchmark service
-      ansible.builtin.shell: docker service rm nginx-benchmark
-      ignore_errors: yes
+        msg: '{{ wrk_output.stdout_lines | select("search", "Req/Sec") }}'
