@@ -1,0 +1,16 @@
+[swarm-manager]
+ec2-3-70-46-18.eu-central-1.compute.amazonaws.com
+
+[swarm-workers]
+ec2-18-199-167-8.eu-central-1.compute.amazonaws.com
+ec2-52-59-237-13.eu-central-1.compute.amazonaws.com
+
+[swarm-manager:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/gh-ci-repair-key.pem
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[swarm-workers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/gh-ci-repair-key.pem
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'

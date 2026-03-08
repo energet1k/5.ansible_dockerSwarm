@@ -1,0 +1,8 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install Python
+      ansible.builtin.package:
+        name: python3
+        state: present

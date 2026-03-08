@@ -1,0 +1,16 @@
+---
+- hosts: web-server1
+  become: yes
+  tasks:
+    - name: Stop Apache
+      ansible.builtin.service:
+        name: apache2
+        state: stopped
+
+- hosts: web-server2
+  become: yes
+  tasks:
+    - name: Stop Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: stopped

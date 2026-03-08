@@ -1,0 +1,21 @@
+---
+- hosts: web-server1
+  tasks:
+    - name: generate secret
+      ansible.builtin.shell: openssl rand -hex 16 | base64
+      register: command_output
+
+    - name: Add command_output to dummy host
+      ansible.builtin.add_host:
+        name: "DUMMY_HOST"
+        shared_secret: "{{ command_output.stdout }}"
+
+    - name: debug
+      ansible.builtin.debug:
+        msg: "Secret password is {{ command_output.stdout }}"
+
+- hosts: web-server2
+  tasks:
+    - name: print paswd
+      ansible.builtin.debug:
+        msg: "paswd is {{ hostvars['DUMMY_HOST']['shared_secret'] }}"
